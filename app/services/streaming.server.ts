@@ -4,17 +4,27 @@
  */
 
 /**
- * Creates a StreamManager to handle SSE streams with proper backpressure
- * @param {TextEncoder} encoder - A TextEncoder instance
- * @param {ReadableStreamDefaultController} controller - The stream controller
- * @returns {Object} StreamManager with utility methods for handling streaming
+ * StreamManager service type.
  */
-export function createStreamManager(encoder, controller) {
+export type StreamManager = {
+  sendMessage: (data: Record<string, any>) => void;
+  sendError: (error: { type: string; error: string; details: string }) => void;
+  closeStream: () => void;
+  handleStreamingError: (error: any) => void;
+};
+
+/**
+ * Creates a StreamManager to handle SSE streams with proper backpressure
+ */
+export function createStreamManager(
+  encoder: TextEncoder,
+  controller: ReadableStreamDefaultController,
+): StreamManager {
   /**
    * Send a data message to the client
    * @param {Object} data - Data to send
    */
-  const sendMessage = (data) => {
+  const sendMessage: StreamManager['sendMessage'] = (data: Record<string, any>) => {
     try {
       const text = `data: ${JSON.stringify(data)}\n\n`;
       controller.enqueue(encoder.encode(text));
@@ -25,19 +35,15 @@ export function createStreamManager(encoder, controller) {
 
   /**
    * Send an error message to the client
-   * @param {Object} error - Error object
-   * @param {string} error.type - Error type
-   * @param {string} error.error - Error title/message
-   * @param {string} error.details - Error details
    */
-  const sendError = ({ type, error, details }) => {
+  const sendError: StreamManager['sendError'] = ({ type, error, details }) => {
     sendMessage({ type, error, details });
   };
 
   /**
    * Close the stream
    */
-  const closeStream = () => {
+  const closeStream: StreamManager['closeStream'] = () => {
     try {
       controller.close();
     } catch (error) {
@@ -47,9 +53,8 @@ export function createStreamManager(encoder, controller) {
 
   /**
    * Handle streaming errors by sending appropriate error messages
-   * @param {Error} error - The error that occurred
    */
-  const handleStreamingError = (error) => {
+  const handleStreamingError: StreamManager['handleStreamingError'] = (error: any) => {
     console.error('Error processing streaming request:', error);
 
     if (error.status === 401 || error.message.includes('auth') || error.message.includes('key')) {
@@ -86,13 +91,13 @@ export function createStreamManager(encoder, controller) {
  * @param {Function} streamHandler - Async function that handles the stream
  * @returns {ReadableStream} A readable stream for SSE
  */
-export function createSseStream(streamHandler) {
+export function createSseStream(streamHandler: (stream: StreamManager) => Promise<void>): ReadableStream {
   const encoder = new TextEncoder();
-  
+
   return new ReadableStream({
     async start(controller) {
       const streamManager = createStreamManager(encoder, controller);
-      
+
       try {
         await streamHandler(streamManager);
       } catch (error) {

@@ -8,12 +8,11 @@ export const AppConfig = {
   api: {
     defaultModel: 'claude-3-5-sonnet-latest',
     maxTokens: 2000,
-    defaultPromptType: 'standardAssistant',
   },
 
   // Error Message Templates
   errorMessages: {
-    missingMessage: "Message is required",
+    missingParameter: (param: string) => `Missing required parameter: ${param}`,
     apiUnsupported: "This endpoint only supports server-sent events (SSE) requests or history requests.",
     authFailed: "Authentication failed with Claude API",
     apiKeyError: "Please check your API key in environment variables",
@@ -27,6 +26,6 @@ export const AppConfig = {
     productSearchName: "search_shop_catalog",
     maxProductsToDisplay: 3
   }
-};
+} as const;
 
 export default AppConfig;

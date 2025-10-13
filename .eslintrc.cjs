@@ -49,7 +49,7 @@ module.exports = {
         },
       },
       rules: {
-        "react/no-unknown-property": ["error", { ignore: ["variant"] }],
+        "react/no-unknown-property": ["error", { ignore: ["variant"] }]
       },
     },
 
@@ -74,6 +74,9 @@ module.exports = {
         "plugin:import/recommended",
         "plugin:import/typescript",
       ],
+      rules: {
+        "@typescript-eslint/no-explicit-any": "off"
+      }
     },
 
     // Node
