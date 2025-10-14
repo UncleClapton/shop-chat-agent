@@ -3,11 +3,13 @@
  * Centralizes all configuration values for the chat service
  */
 
+import { Model } from '@anthropic-ai/sdk/resources/index.mjs';
+
 export const AppConfig = {
   // API Configuration
   api: {
-    defaultModel: 'claude-3-5-sonnet-latest',
-    maxTokens: 2000,
+    defaultModel: 'claude-3-5-haiku-latest',
+    maxTokens: 1000,
   },
 
   // Error Message Templates
@@ -26,6 +28,25 @@ export const AppConfig = {
     productSearchName: "search_shop_catalog",
     maxProductsToDisplay: 3
   }
-} as const;
+} as const satisfies AppConfigType;
 
-export default AppConfig;
+
+type AppConfigType = {
+  api: {
+    defaultModel: Model;
+    maxTokens: number;
+  };
+  errorMessages: {
+    missingParameter: (param: string) => string;
+    apiUnsupported: string;
+    authFailed: string;
+    apiKeyError: string;
+    rateLimitExceeded: string;
+    rateLimitDetails: string;
+    genericError: string;
+  };
+  tools: {
+    productSearchName: string;
+    maxProductsToDisplay: number;
+  };
+};

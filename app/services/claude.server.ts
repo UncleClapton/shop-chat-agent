@@ -4,8 +4,8 @@
  */
 import { Anthropic } from "@anthropic-ai/sdk";
 import { ContentBlock, Message, MessageParam, Tool, ToolUseBlock } from '@anthropic-ai/sdk/resources/messages.mjs';
-import { AppConfig } from "./config.server";
 import { invariant } from 'app/lib/helper';
+import { AppConfig } from "./config.server";
 
 
 const claudeKey = invariant(process.env.CLAUDE_API_KEY, 'string', 'Claude API key is not set in environment variables');
@@ -23,12 +23,12 @@ export type ClaudeService = {
       onToolUse?: (toolUse: ToolUseBlock) => Promise<void>;
     }
   ) => Promise<Message>;
-}
+};
 
 /**
  * Creates a Claude service instance
  */
-export function createClaudeService(
+export function createClaudeService (
   shopName: string,
   apiKey: string = claudeKey,
 ): ClaudeService {
@@ -45,7 +45,7 @@ export function createClaudeService(
   }, streamHandlers) => {
     // Create stream
     const stream = await anthropic.messages.stream({
-      model: 'claude-3-5-haiku-latest',
+      model: AppConfig.api.defaultModel,
       max_tokens: AppConfig.api.maxTokens,
       system: systemPrompt,
       messages,

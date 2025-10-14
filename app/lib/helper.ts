@@ -11,9 +11,9 @@ type TypeofMap = {
   undefined: undefined;
   object: object | null;
   function: (...args: any[]) => any;
-}
+};
 
-export function invariant<T extends TypeofKind>(value: any, type: T, errorMessage?: string): TypeofMap[T] {
+export function invariant<T extends TypeofKind> (value: any, type: T, errorMessage?: string): TypeofMap[T] {
   if (typeof value !== type) {
     throw new Error(errorMessage ?? `Expected value of type ${type}, but received type ${typeof value}`);
   }

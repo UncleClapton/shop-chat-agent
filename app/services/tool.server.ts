@@ -9,17 +9,17 @@ import { AppConfig } from "./config.server";
 type ToolResponseContent = string | (ImageBlockParam | TextBlockParam)[];
 
 type ToolSuccessResponse = {
-  content: ToolResponseContent
+  content: ToolResponseContent;
   error?: never;
-}
+};
 
 type ToolErrorResponse = {
   content?: never;
   error: {
     type: string;
-    data: ToolResponseContent
+    data: ToolResponseContent;
   };
-}
+};
 
 type ToolResponse = ToolSuccessResponse | ToolErrorResponse;
 
@@ -31,12 +31,12 @@ export type ProductData = {
   image_url: string;
   description: string;
   url: string;
-}
+};
 
 // Additional data that is processed by this service may be contained within this type, but it is not guaranteed
 export type ToolSuccessResult = {
   productsToDisplay?: ProductData[];
-}
+};
 
 type ToolService = {
   handleToolError: (
@@ -61,7 +61,7 @@ type ToolService = {
     toolUseId: string,
     content: ToolResponseContent,
   ) => Promise<void>;
-}
+};
 
 /**
  * Creates a tool service instance
@@ -103,7 +103,7 @@ export function createToolService (): ToolService {
     const result: ToolSuccessResult = {};
 
     if (toolName === AppConfig.tools.productSearchName) {
-      result.productsToDisplay = processProductSearchResult(toolUseResponse)
+      result.productsToDisplay = processProductSearchResult(toolUseResponse);
     }
 
     return result;

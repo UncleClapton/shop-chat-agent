@@ -19,7 +19,7 @@ export default prisma;
 /**
  * Create or update a conversation in the database
  */
-export async function createOrUpdateConversation(conversationId: string) {
+export async function createOrUpdateConversation (conversationId: string) {
   try {
     const existingConversation = await prisma.conversation.findUnique({
       where: { id: conversationId }
@@ -48,7 +48,7 @@ export async function createOrUpdateConversation(conversationId: string) {
 /**
  * Save a message to the database
  */
-export async function saveMessage(conversationId: string, role: string, content: string) {
+export async function saveMessage (conversationId: string, role: string, content: string) {
   try {
     // Ensure the conversation exists
     await createOrUpdateConversation(conversationId);
@@ -70,7 +70,7 @@ export async function saveMessage(conversationId: string, role: string, content:
 /**
  * Get conversation history
  */
-export async function getConversationHistory(conversationId: string) {
+export async function getConversationHistory (conversationId: string) {
   try {
     const messages = await prisma.message.findMany({
       where: { conversationId },

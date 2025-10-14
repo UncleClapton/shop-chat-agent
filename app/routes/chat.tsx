@@ -2,14 +2,17 @@
  * Chat API Route
  * Handles chat interactions with Claude API and tools
  */
+import {
+  Message,
+  MessageParam,
+  Tool,
+} from "@anthropic-ai/sdk/resources/messages.mjs";
+import { getConversationHistory, saveMessage } from "../db.server";
 import MCPClient from "../mcp-client";
-import { saveMessage, getConversationHistory } from "../db.server";
-import {AppConfig} from "../services/config.server";
-import { createSseStream, StreamManager } from "../services/streaming.server";
 import { createClaudeService } from "../services/claude.server";
+import { AppConfig } from "../services/config.server";
+import { createSseStream, StreamManager } from "../services/streaming.server";
 import { createToolService, ProductData } from "../services/tool.server";
-import { Message, MessageParam, Tool } from '@anthropic-ai/sdk/resources/messages.mjs';
-
 
 /**
  * Rract Router loader function for handling GET requests
@@ -19,38 +22,48 @@ export async function loader({ request }: { request: Request }) {
   if (request.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
-      headers: getCorsHeaders()
+      headers: getCorsHeaders(),
     });
   }
 
   const url = new URL(request.url);
 
-  const conversationId = url.searchParams.get('conversation_id');
+  const conversationId = url.searchParams.get("conversation_id");
 
   // Handle history fetch requests - matches /chat?history=true&conversation_id=XYZ
-  if (url.searchParams.has('history') && conversationId?.length) {
+  if (url.searchParams.has("history") && conversationId?.length) {
     return handleHistoryRequest(conversationId);
   }
 
   // Handle SSE requests
-  if (!url.searchParams.has('history') && request.headers.get("Accept") === "text/event-stream") {
+  if (
+    !url.searchParams.has("history") &&
+    request.headers.get("Accept") === "text/event-stream"
+  ) {
     return handleChatRequest(request, conversationId ?? makeConversationId());
   }
 
   // API-only: reject all other requests
-  return new Response(JSON.stringify({ error: AppConfig.errorMessages.apiUnsupported }), { status: 400, headers: getCorsHeaders() });
+  return new Response(
+    JSON.stringify({ error: AppConfig.errorMessages.apiUnsupported }),
+    { status: 400, headers: getCorsHeaders() },
+  );
 }
 
 export async function action({ request }: { request: Request }) {
   // Handle SSE requests
   if (request.headers.get("Accept") === "text/event-stream") {
     const url = new URL(request.url);
-    const conversationId = url.searchParams.get('conversation_id') ?? makeConversationId();
+    const conversationId =
+      url.searchParams.get("conversation_id") ?? makeConversationId();
     return handleChatRequest(request, conversationId);
   }
 
   // API-only: reject all other requests
-  return new Response(JSON.stringify({ error: AppConfig.errorMessages.apiUnsupported }), { status: 400, headers: getCorsHeaders() });
+  return new Response(
+    JSON.stringify({ error: AppConfig.errorMessages.apiUnsupported }),
+    { status: 400, headers: getCorsHeaders() },
+  );
 }
 
 /**
@@ -59,7 +72,9 @@ export async function action({ request }: { request: Request }) {
 async function handleHistoryRequest(conversationId: string) {
   const messages = await getConversationHistory(conversationId);
 
-  return new Response(JSON.stringify({ messages }), { headers: getCorsHeaders() });
+  return new Response(JSON.stringify({ messages }), {
+    headers: getCorsHeaders(),
+  });
 }
 
 /**
@@ -75,24 +90,30 @@ async function handleChatRequest(request: Request, conversationId: string) {
     const shopName = body.shopName;
 
     // Validate required message
-    if (typeof userMessage !== 'string' || userMessage.trim().length === 0) {
+    if (typeof userMessage !== "string" || userMessage.trim().length === 0) {
       return new Response(
-        JSON.stringify({ error: AppConfig.errorMessages.missingParameter('message') }),
-        { status: 400, headers: getSseHeaders() }
+        JSON.stringify({
+          error: AppConfig.errorMessages.missingParameter("message"),
+        }),
+        { status: 400, headers: getSseHeaders() },
       );
     }
 
-    if (typeof shopDomain !== 'string' || shopDomain.trim().length === 0) {
+    if (typeof shopDomain !== "string" || shopDomain.trim().length === 0) {
       return new Response(
-        JSON.stringify({ error: AppConfig.errorMessages.missingParameter('shopDomain') }),
-        { status: 400, headers: getSseHeaders() }
+        JSON.stringify({
+          error: AppConfig.errorMessages.missingParameter("shopDomain"),
+        }),
+        { status: 400, headers: getSseHeaders() },
       );
     }
 
-    if (typeof shopName !== 'string' || shopName.trim().length === 0) {
+    if (typeof shopName !== "string" || shopName.trim().length === 0) {
       return new Response(
-        JSON.stringify({ error: AppConfig.errorMessages.missingParameter('shopName') }),
-        { status: 400, headers: getSseHeaders() }
+        JSON.stringify({
+          error: AppConfig.errorMessages.missingParameter("shopName"),
+        }),
+        { status: 400, headers: getSseHeaders() },
       );
     }
 
@@ -103,23 +124,21 @@ async function handleChatRequest(request: Request, conversationId: string) {
         shopName,
         userMessage,
         conversationId,
-        stream
+        stream,
       });
     });
 
     return new Response(responseStream, {
-      headers: getSseHeaders()
+      headers: getSseHeaders(),
     });
   } catch (error: any) {
-    console.error('Error in chat request handler:', error);
+    console.error("Error in chat request handler:", error);
     return new Response(JSON.stringify({ error: error?.message }), {
       status: 500,
-      headers: getCorsHeaders()
+      headers: getCorsHeaders(),
     });
   }
 }
-
-
 
 type ChatSessionParams = {
   shopDomain: string;
@@ -127,8 +146,8 @@ type ChatSessionParams = {
   claudeToken?: string;
   conversationId: string;
   userMessage: string;
-  stream: StreamManager
-}
+  stream: StreamManager;
+};
 
 /**
  * Handle a complete chat session
@@ -139,7 +158,7 @@ async function handleChatSession({
   claudeToken,
   userMessage,
   conversationId,
-  stream
+  stream,
 }: ChatSessionParams) {
   // Initialize services
   const claudeService = createClaudeService(shopName, claudeToken);
@@ -149,7 +168,7 @@ async function handleChatSession({
   // eslint-disable-next-line no-useless-catch
   try {
     // Send conversation ID to client
-    stream.sendMessage({ type: 'id', conversation_id: conversationId });
+    stream.sendMessage({ type: "id", conversation_id: conversationId });
 
     // Connect to MCP servers and get available tools
     let tools: Tool[] = [];
@@ -157,20 +176,23 @@ async function handleChatSession({
       tools = await mcpClient.getTools();
       console.log(`Connected to MCP with ${tools.length} tools`);
     } catch (error) {
-      console.warn('Failed to connect to MCP servers, continuing without tools:', error);
+      console.warn(
+        "Failed to connect to MCP servers, continuing without tools:",
+        error,
+      );
     }
 
     // Prepare conversation state
     const productsToDisplay: ProductData[] = [];
 
     // Save user message to the database
-    await saveMessage(conversationId, 'user', userMessage);
+    await saveMessage(conversationId, "user", userMessage);
 
     // Fetch all messages from the database for this conversation
     const dbMessages = await getConversationHistory(conversationId);
 
     // Format messages for Claude API
-    const conversationHistory = dbMessages.map(dbMessage => {
+    const conversationHistory = dbMessages.map((dbMessage) => {
       let content;
       try {
         content = JSON.parse(dbMessage.content);
@@ -179,7 +201,7 @@ async function handleChatSession({
       }
       return {
         role: dbMessage.role,
-        content
+        content,
       } as MessageParam;
     });
 
@@ -196,8 +218,8 @@ async function handleChatSession({
           // Handle text chunks
           onText: (textDelta) => {
             stream.sendMessage({
-              type: 'chunk',
-              chunk: textDelta
+              type: "chunk",
+              chunk: textDelta,
             });
           },
 
@@ -205,16 +227,19 @@ async function handleChatSession({
           onMessage: (message) => {
             conversationHistory.push({
               role: message.role,
-              content: message.content
+              content: message.content,
             });
 
-            saveMessage(conversationId, message.role, JSON.stringify(message.content))
-              .catch((error) => {
-                console.error("Error saving message to database:", error);
-              });
+            saveMessage(
+              conversationId,
+              message.role,
+              JSON.stringify(message.content),
+            ).catch((error) => {
+              console.error("Error saving message to database:", error);
+            });
 
             // Send a completion message
-            stream.sendMessage({ type: 'message_complete' });
+            stream.sendMessage({ type: "message_complete" });
           },
 
           // Handle tool use requests
@@ -224,12 +249,15 @@ async function handleChatSession({
             const toolUseId = content.id;
 
             stream.sendMessage({
-              type: 'tool_use',
+              type: "tool_use",
               tool_use_message: `Calling tool: ${toolName} with arguments: ${JSON.stringify(toolArgs)}`,
             });
 
             // Call the tool
-            const toolUseResponse = await mcpClient.callTool(toolName, toolArgs);
+            const toolUseResponse = await mcpClient.callTool(
+              toolName,
+              toolArgs,
+            );
 
             // Handle tool response based on success/error
             if (toolUseResponse.error) {
@@ -242,7 +270,7 @@ async function handleChatSession({
                 stream.sendMessage,
               );
             } else {
-              const result =  await toolService.handleToolSuccess(
+              const result = await toolService.handleToolSuccess(
                 conversationId,
                 conversationHistory,
                 toolName,
@@ -256,32 +284,32 @@ async function handleChatSession({
             }
 
             // Signal new message to client
-            stream.sendMessage({ type: 'new_message' });
+            stream.sendMessage({ type: "new_message" });
           },
 
           // Handle content block completion
           onContentBlock: (contentBlock) => {
-            if (contentBlock.type === 'text') {
+            if (contentBlock.type === "text") {
               stream.sendMessage({
-                type: 'content_block_complete',
-                content_block: contentBlock
+                type: "content_block_complete",
+                content_block: contentBlock,
               });
             }
-          }
-        }
+          },
+        },
       );
     }
-
-    // Signal end of turn
-    stream.sendMessage({ type: 'end_turn' });
 
     // Send product results if available
     if (productsToDisplay.length > 0) {
       stream.sendMessage({
-        type: 'product_results',
+        type: "product_results",
         products: productsToDisplay,
       });
     }
+
+    // Signal end of turn
+    stream.sendMessage({ type: "end_turn" });
   } catch (error) {
     // The streaming handler takes care of error handling
     throw error;
@@ -291,12 +319,12 @@ async function handleChatSession({
 function makeConversationId() {
   const curDate = new Date();
   const year = curDate.getUTCFullYear();
-  const month = String(curDate.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(curDate.getUTCDate()).padStart(2, '0');
+  const month = String(curDate.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(curDate.getUTCDate()).padStart(2, "0");
   return `conv-${year}${month}${day}-${randId(8)}-${randId(8)}-${randId(8)}`;
 }
 function randId(length = 64) {
-  let buffer = '';
+  let buffer = "";
   while (buffer.length < length) {
     buffer += Math.random().toString(36).substring(2);
   }
@@ -314,7 +342,7 @@ function getCorsHeaders() {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Accept",
     "Access-Control-Allow-Credentials": "true",
-    "Access-Control-Max-Age": "86400" // 24 hours
+    "Access-Control-Max-Age": "86400", // 24 hours
   } as const;
 }
 
@@ -325,10 +353,11 @@ function getSseHeaders() {
   return {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
-    "Connection": "keep-alive",
+    Connection: "keep-alive",
     "Access-Control-Allow-Credentials": "true",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET,OPTIONS,POST",
-    "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+    "Access-Control-Allow-Headers":
+      "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version",
   } as const;
 }

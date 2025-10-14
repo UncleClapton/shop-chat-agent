@@ -8,7 +8,7 @@
  */
 export type StreamManager = {
   sendMessage: (data: Record<string, any>) => void;
-  sendError: (error: { type: string; error: string; details: string }) => void;
+  sendError: (error: { type: string; error: string; details: string; }) => void;
   closeStream: () => void;
   handleStreamingError: (error: any) => void;
 };
@@ -16,7 +16,7 @@ export type StreamManager = {
 /**
  * Creates a StreamManager to handle SSE streams with proper backpressure
  */
-export function createStreamManager(
+export function createStreamManager (
   encoder: TextEncoder,
   controller: ReadableStreamDefaultController,
 ): StreamManager {
@@ -91,11 +91,11 @@ export function createStreamManager(
  * @param {Function} streamHandler - Async function that handles the stream
  * @returns {ReadableStream} A readable stream for SSE
  */
-export function createSseStream(streamHandler: (stream: StreamManager) => Promise<void>): ReadableStream {
+export function createSseStream (streamHandler: (stream: StreamManager) => Promise<void>): ReadableStream {
   const encoder = new TextEncoder();
 
   return new ReadableStream({
-    async start(controller) {
+    async start (controller) {
       const streamManager = createStreamManager(encoder, controller);
 
       try {
