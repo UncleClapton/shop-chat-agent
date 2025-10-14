@@ -124,7 +124,6 @@ async function handleChatRequest(request: Request, conversationId: string) {
 type ChatSessionParams = {
   shopDomain: string;
   shopName: string;
-  additionalPrompt?: string;
   claudeToken?: string;
   conversationId: string;
   userMessage: string;
@@ -137,14 +136,13 @@ type ChatSessionParams = {
 async function handleChatSession({
   shopDomain,
   shopName,
-  additionalPrompt,
   claudeToken,
   userMessage,
   conversationId,
   stream
 }: ChatSessionParams) {
   // Initialize services
-  const claudeService = createClaudeService(shopName, additionalPrompt, claudeToken);
+  const claudeService = createClaudeService(shopName, claudeToken);
   const toolService = createToolService();
   const mcpClient = new MCPClient(shopDomain);
 
