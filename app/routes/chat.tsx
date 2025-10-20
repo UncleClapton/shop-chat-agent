@@ -31,16 +31,8 @@ export async function loader({ request }: { request: Request }) {
   const conversationId = url.searchParams.get("conversation_id");
 
   // Handle history fetch requests - matches /chat?history=true&conversation_id=XYZ
-  if (url.searchParams.has("history") && conversationId?.length) {
+  if (conversationId?.length) {
     return handleHistoryRequest(conversationId);
-  }
-
-  // Handle SSE requests
-  if (
-    !url.searchParams.has("history") &&
-    request.headers.get("Accept") === "text/event-stream"
-  ) {
-    return handleChatRequest(request, conversationId ?? makeConversationId());
   }
 
   // API-only: reject all other requests
