@@ -1,67 +1,62 @@
-# Build an AI Agent for Your Storefront
+# Shop Chat Agent - Simplified Product Search Chatbot
 
-A Shopify template app that lets you embed an AI-powered chat widget on your storefront. Shoppers can search for products, ask about policies or shipping, and complete purchases - all without leaving the conversation. Under the hood it speaks the [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) to tap into Shopify’s APIs.
+This version of the Shop Chat Agent is a streamlined implementation designed to facilitate basic product searches through a chat interface.
 
-## Overview
+## Not intended for Production deployment
 
-- **What it is**: A chat widget + backend that turns any storefront into an AI shopping assistant.
-- **Key features**:
-  - Natural-language product discovery
-  - Store policy & FAQ lookup
-  - Create carts, add or remove items, and initiate checkout
-  - Track orders and initiate returns
+This implementation is meant for educational and demonstration purposes only. It lacks advanced features, optimizations, and security measures required for production use. Users should not deploy this version in a live environment.
 
-## Developer Docs
-- Everything from installation to deep dives lives on https://shopify.dev/docs/apps/build/storefront-mcp.
-- Clone this repo and follow the instructions on the dev docs.
+## Setup
 
-## Examples
-- `hi` > will return a LLM based response. Note that you can customize the LLM call with your own prompt.
-- `can you search for snowboards` > will use the `search_shop_catalog` MCP tool.
-- `add The Videographer Snowboard to my cart` > will use the `update_cart` MCP tool and offer a checkout URL.
-- `update my cart to make that 2 items please` > will use the `update_cart` MCP tool.
-- `can you tell me what is in my cart` > will use the `get_cart` MCP tool.
-- `what languages is your store available in?` > will use the `search_shop_policies_and_faqs` MCP tool.
-- `I'd like to checkout` > will call checkout from one of the above MCP cart tools.
-- `Show me my recent orders` > will use the `get_most_recent_order_status` MCP tool.
-- `Can you give me more details about order Id 1` > will use the `get_order_status` MCP tool.
+1. Clone this repository to your local machine.
+    * `git clone https://github.com/uncleclapton/shop-chat-agent.git`
+2. Navigate to the project directory.
+    * `cd shop-chat-agent`
+3. Install project dependencies.
+    * `yarn install`
+4. Setup local DB & Prisma.
+    * `yarn setup`
+5. Configure environment variables
+    * Copy `.env.example` to `.env` and fill in the required values.
+6. The service is now ready to run!
 
-## Architecture
+## Run
 
-### Components
-This app consists of two main components:
+To start the development server, run the following command:
 
-1. **Backend**: A React Router app server that handles communication with Claude, processes chat messages, and acts as an MCP Client.
-2. **Chat UI**: A Shopify theme extension that provides the customer-facing chat interface.
+```bash
+yarn start
+```
 
-When you start the app, it will:
-- Start React Router in development mode.
-- Tunnel your local server so Shopify can reach it.
-- Provide a preview URL to install the app on your development store.
+The server will be accessible at `http://localhost:3000`.
 
-For direct testing, point your test suite at the `/chat` endpoint (GET or POST for streaming).
+## Dev Notes
 
-### MCP Tools Integration
-- The backend already initializes all Shopify MCP tools—see [`app/mcp-client.js`](./app/mcp-client.js).
-- These tools let your LLM invoke product search, cart actions, order lookups, etc.
-- More in our [dev docs](https://shopify.dev/docs/apps/build/storefront-mcp).
+* Some configuration options have been hardcoded for simplicity.
+  * See `app/services/config.server.ts` to customize these settings.
+* You may customize the system prompt used by the chat agent in `app/services/claude.server.ts`.
+* See the postman collection in `docs/postman.json` for example requests.
 
-### Tech Stack
-- **Framework**: [React Router](https://reactrouter.com/)
-- **AI**: [Claude by Anthropic](https://www.anthropic.com/claude)
-- **Shopify Integration**: [@shopify/shopify-app-react-router](https://www.npmjs.com/package/@shopify/shopify-app-react-router)
-- **Database**: SQLite (via Prisma) for session storage
+## Routes
 
-## Customizations
-This repo can be customized. You can:
-- Edit the prompt
-- Change the chat widget UI
-- Swap out the LLM
+### `GET /chat?conversation_id={conversationId}`
 
-You can learn how from our [dev docs](https://shopify.dev/docs/apps/build/storefront-mcp).
+Fetches the chat history for a given conversation ID.
 
-## Deployment
-Follow standard Shopify app deployment procedures as outlined in the [Shopify documentation](https://shopify.dev/docs/apps/deployment/web).
+* **Parameters:**
+  * `conversation_id` (string): The ID of the conversation to fetch.
 
-## Contributing
-We appreciate your interest in contributing to this project. As this is an example repository intended for educational and reference purposes, we are not accepting contributions.
+### `POST /chat?conversation_id={conversationId}`
+
+Sends a message to the chat agent within the specified conversation. If no conversation ID is provided, a new conversation will be created.
+
+Responds with a server-sent events (SSE) stream which will relay the chat agent's responses, product search results, as well as the conversation ID.
+
+* **Parameters:**
+  * `conversation_id` (string) (optional): The ID of the conversation to send the message to.
+
+* **Body:**
+  * `message` (string): The message to send to the chat agent.
+  * `shopDomain` (string): The domain of the shop to query products from.
+    * e.g., `https://mystorename.myshopify.com`
+  * `shopName` (string): The name of the shop to query products from.
