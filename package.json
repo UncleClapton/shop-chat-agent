@@ -18,7 +18,7 @@
     "node": ">=20.10"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.65.0",
+    "@anthropic-ai/sdk": "^0.67.0",
     "@prisma/client": "^6.17.1",
     "@react-router/dev": "^7.9.4",
     "@react-router/fs-routes": "^7.9.4",

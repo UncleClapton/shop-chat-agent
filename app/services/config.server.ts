@@ -8,8 +8,8 @@ import { Model } from '@anthropic-ai/sdk/resources/index.mjs';
 export const AppConfig = {
   // API Configuration
   api: {
-    defaultModel: 'claude-3-5-haiku-latest',
-    maxTokens: 1000,
+    defaultModel: 'claude-haiku-4-5',
+    maxTokens: 2000,
   },
 
   // Error Message Templates
