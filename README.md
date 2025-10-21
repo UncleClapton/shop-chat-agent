@@ -8,8 +8,8 @@ This implementation is meant for educational and demonstration purposes only. It
 
 ## Setup
 
-1. Clone this repository to your local machine.
-    * `git clone https://github.com/uncleclapton/shop-chat-agent.git`
+1. Clone this branch to your local machine.
+    * `git clone -b simple-shop-chat https://github.com/uncleclapton/shop-chat-agent.git`
 2. Navigate to the project directory.
     * `cd shop-chat-agent`
 3. Install project dependencies.
