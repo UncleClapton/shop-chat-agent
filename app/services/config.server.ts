@@ -14,13 +14,16 @@ export const AppConfig = {
 
   // Error Message Templates
   errorMessages: {
-    missingParameter: (param: string) => `Missing required parameter: ${param}`,
-    apiUnsupported: "This endpoint only supports server-sent events (SSE) requests or history requests.",
-    authFailed: "Authentication failed with Claude API",
-    apiKeyError: "Please check your API key in environment variables",
-    rateLimitExceeded: "Rate limit exceeded",
-    rateLimitDetails: "Please try again later",
-    genericError: "Failed to get response from Claude"
+    missingBody: "Request body is missing or invalid.",
+    missingBodyArg: (param: string) => `Missing or invalid body parameter: ${param}.`,
+    missingParam: (param: string) => `Missing or invalid query parameter: ${param}.`,
+    chatUnsupported: "This endpoint only supports server-sent events (SSE) requests or history requests.",
+    mcpUnsupported: "This endpoint only supports POST requests.",
+    authFailed: "Authentication failed with Claude API.",
+    apiKeyError: "Please check your API key in environment variables.",
+    rateLimitExceeded: "Rate limit exceeded.",
+    rateLimitDetails: "Please try again later.",
+    genericError: "Failed to get response from Claude."
   },
 
   // Tool Configuration
@@ -37,8 +40,11 @@ type AppConfigType = {
     maxTokens: number;
   };
   errorMessages: {
-    missingParameter: (param: string) => string;
-    apiUnsupported: string;
+    missingBody: string;
+    missingBodyArg: (param: string) => string;
+    missingParam: (param: string) => string;
+    chatUnsupported: string;
+    mcpUnsupported: string;
     authFailed: string;
     apiKeyError: string;
     rateLimitExceeded: string;

@@ -13,6 +13,13 @@ import { createClaudeService } from "../services/claude.server";
 import { AppConfig } from "../services/config.server";
 import { createSseStream, StreamManager } from "../services/streaming.server";
 import { createToolService, ProductData } from "../services/tool.server";
+import {
+  CorsResponse,
+  JSONResponse,
+  MissingBodyArgErrorResponse,
+  MissingParamErrorResponse,
+  SseResponse,
+} from "../lib/responses.server";
 
 /**
  * Rract Router loader function for handling GET requests
@@ -20,25 +27,23 @@ import { createToolService, ProductData } from "../services/tool.server";
 export async function loader({ request }: { request: Request }) {
   // Handle OPTIONS requests (CORS preflight)
   if (request.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: getCorsHeaders(),
-    });
+    return new CorsResponse(null, { status: 204 });
   }
 
   const url = new URL(request.url);
 
   const conversationId = url.searchParams.get("conversation_id");
-
-  // Handle history fetch requests - matches /chat?history=true&conversation_id=XYZ
-  if (conversationId?.length) {
-    return handleHistoryRequest(conversationId);
+  if (!conversationId?.length) {
+    return new MissingParamErrorResponse("conversation_id");
   }
 
+  // Handle history fetch requests - matches /chat?history=true&conversation_id=XYZ
+  return handleHistoryRequest(conversationId);
+
   // API-only: reject all other requests
-  return new Response(
-    JSON.stringify({ error: AppConfig.errorMessages.apiUnsupported }),
-    { status: 400, headers: getCorsHeaders() },
+  return new JSONResponse(
+    { error: AppConfig.errorMessages.chatUnsupported },
+    { status: 400 },
   );
 }
 
@@ -52,9 +57,9 @@ export async function action({ request }: { request: Request }) {
   }
 
   // API-only: reject all other requests
-  return new Response(
-    JSON.stringify({ error: AppConfig.errorMessages.apiUnsupported }),
-    { status: 400, headers: getCorsHeaders() },
+  return new JSONResponse(
+    { error: AppConfig.errorMessages.chatUnsupported },
+    { status: 400 },
   );
 }
 
@@ -64,9 +69,7 @@ export async function action({ request }: { request: Request }) {
 async function handleHistoryRequest(conversationId: string) {
   const messages = await getConversationHistory(conversationId);
 
-  return new Response(JSON.stringify({ messages }), {
-    headers: getCorsHeaders(),
-  });
+  return new JSONResponse({ messages });
 }
 
 /**
@@ -75,38 +78,33 @@ async function handleHistoryRequest(conversationId: string) {
  */
 async function handleChatRequest(request: Request, conversationId: string) {
   try {
+    const url = new URL(request.url);
+    const storeParam = url.searchParams.get("store");
+
     // Get message data from request body
-    const body = await request.json();
-    const userMessage = body.message;
-    const shopDomain = body.shopDomain;
-    const shopName = body.shopName;
+    const {
+      message: userMessage,
+      store: storeArg,
+      shopDomain: shopDomainArg,
+      shopName,
+    } = await request.json().catch(() => ({}));
+
+    const store = storeArg ?? storeParam;
+    const shopDomain =
+      shopDomainArg ?? store ? `https://${store}.myshopify.com` : undefined;
 
     // Validate required message
-    if (typeof userMessage !== "string" || userMessage.trim().length === 0) {
-      return new Response(
-        JSON.stringify({
-          error: AppConfig.errorMessages.missingParameter("message"),
-        }),
-        { status: 400, headers: getSseHeaders() },
-      );
-    }
-
     if (typeof shopDomain !== "string" || shopDomain.trim().length === 0) {
-      return new Response(
-        JSON.stringify({
-          error: AppConfig.errorMessages.missingParameter("shopDomain"),
-        }),
-        { status: 400, headers: getSseHeaders() },
+      return new MissingBodyArgErrorResponse(
+        "shopDomain",
+        "Alternatively, provide 'store' parameter in URL params or body.",
       );
     }
-
     if (typeof shopName !== "string" || shopName.trim().length === 0) {
-      return new Response(
-        JSON.stringify({
-          error: AppConfig.errorMessages.missingParameter("shopName"),
-        }),
-        { status: 400, headers: getSseHeaders() },
-      );
+      return new MissingBodyArgErrorResponse("shopName");
+    }
+    if (typeof userMessage !== "string" || userMessage.trim().length === 0) {
+      return new MissingBodyArgErrorResponse("message");
     }
 
     // Create a stream for the response
@@ -120,15 +118,10 @@ async function handleChatRequest(request: Request, conversationId: string) {
       });
     });
 
-    return new Response(responseStream, {
-      headers: getSseHeaders(),
-    });
+    return new SseResponse(responseStream);
   } catch (error: any) {
     console.error("Error in chat request handler:", error);
-    return new Response(JSON.stringify({ error: error?.message }), {
-      status: 500,
-      headers: getCorsHeaders(),
-    });
+    return new JSONResponse({ error: error?.message }, { status: 500 });
   }
 }
 
@@ -323,33 +316,4 @@ function randId(length = 64) {
   buffer = buffer.substring(0, length);
 
   return buffer;
-}
-
-/**
- * Gets CORS headers for the response
- */
-function getCorsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Accept",
-    "Access-Control-Allow-Credentials": "true",
-    "Access-Control-Max-Age": "86400", // 24 hours
-  } as const;
-}
-
-/**
- * Get SSE headers for the response
- */
-function getSseHeaders() {
-  return {
-    "Content-Type": "text/event-stream",
-    "Cache-Control": "no-cache",
-    Connection: "keep-alive",
-    "Access-Control-Allow-Credentials": "true",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,OPTIONS,POST",
-    "Access-Control-Allow-Headers":
-      "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version",
-  } as const;
 }

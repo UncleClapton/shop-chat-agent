@@ -53,7 +53,7 @@ export default class MCPClient {
   /**
    * Calls a tool on the storefront MCP server.
    */
-  async callTool (toolName: string, toolArgs: unknown): Promise<any> {
+  async callToolRaw (toolName: string, toolArgs: unknown): Promise<any> {
     const tools = await this.getTools();
     if (!tools.some(tool => tool.name === toolName)) {
       throw new Error(`Tool ${toolName} not found`);
@@ -66,7 +66,7 @@ export default class MCPClient {
         "Content-Type": "application/json"
       };
 
-      const response = await this._makeJsonRpcRequest(
+      return await this._makeJsonRpcRequest(
         this.storefrontMcpEndpoint,
         "tools/call",
         {
@@ -75,12 +75,15 @@ export default class MCPClient {
         },
         headers
       );
-
-      return response.result || response;
     } catch (error) {
       console.error(`Error calling tool ${toolName}:`, error);
       throw error;
     }
+  }
+
+  async callTool (toolName: string, toolArgs: unknown): Promise<any> {
+    const response = await this.callToolRaw(toolName, toolArgs);
+    return response.result || response;
   }
 
   /**
@@ -122,6 +125,17 @@ export default class MCPClient {
       };
     });
   }
+}
+
+const clients = new Map<string, MCPClient>();
+
+export function getMCPClient (host: string): MCPClient {
+  if (!clients.has(host)) {
+    const client = new MCPClient(host);
+    clients.set(host, client);
+    client.getTools();
+  }
+  return clients.get(host)!;
 }
 
 
