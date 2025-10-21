@@ -1,0 +1,220 @@
+{
+	"info": {
+		"_postman_id": "0305e373-537b-4be2-8afe-8cdce04bd286",
+		"name": "StorefrontMCPChatAgent",
+		"description": "Companion collection to the streamlined StorefrontMCP Chat agent demo backend.\n\nConfigure variables before sending requests\n\n- `store` - shopify store key for your storefront. This should be the subdomain value used to access your Storefront API graphql endpoint.\n    \n    - For instance, if your api domain is `https://mystore.myshopify.com`, set this to `mystore`\n        \n- `store_name` - Human readable brand name\n    \n    - e.g. `My Store`\n        \n- `conversation_id` - identifier for persistent chat history\n    \n    - e.g. `conversation-1`",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "17685634",
+		"_collection_link": "https://brandingbrand.postman.co/workspace/1d67de9e-50d0-44da-8682-0a0239245f63/collection/17685634-0305e373-537b-4be2-8afe-8cdce04bd286?action=share&source=collection_link&creator=17685634"
+	},
+	"item": [
+		{
+			"name": "/chat",
+			"item": [
+				{
+					"name": "Chat History",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/chat?conversation_id={{conversation_id}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"chat"
+							],
+							"query": [
+								{
+									"key": "conversation_id",
+									"value": "{{conversation_id}}"
+								}
+							]
+						},
+						"description": "Fetches the chat history for the provied conversation ID"
+					},
+					"response": []
+				},
+				{
+					"name": "New Chat Message",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "text/event-stream",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"Find pants over $200\",\n    \"shopName\": \"{{store_name}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/chat?store={{store}}&conversation_id={{conversation_id}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"chat"
+							],
+							"query": [
+								{
+									"key": "store",
+									"value": "{{store}}"
+								},
+								{
+									"key": "conversation_id",
+									"value": "{{conversation_id}}"
+								}
+							]
+						},
+						"description": "Posts a new user message to the specified conversation, and responds with a Server-Sent Events (SSE) stream to enable progressive rendering of the model's response\n\nIf no conversation ID is provided, a new conversation will be generated and the ID will be returned in the `id` event for future reference."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoint for holding a persistent conversation with a storefront-aware Claude model\n\nCurrently using Claude 4.5 Haiku by default."
+		},
+		{
+			"name": "/mcp",
+			"item": [
+				{
+					"name": "MCP Tools",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/mcp?store={{store}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"mcp"
+							],
+							"query": [
+								{
+									"key": "store",
+									"value": "{{store}}"
+								}
+							]
+						},
+						"description": "Get the Shopify Storefront MCP tools schema for the given store"
+					},
+					"response": []
+				},
+				{
+					"name": "Call MCP Tool",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tool\": \"search_shop_catalog\",\n    \"args\": {\n        \"query\": \"pants over $200\",\n        \"context\": \"User is searching for pants\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/mcp?store={{store}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"mcp"
+							],
+							"query": [
+								{
+									"key": "store",
+									"value": "{{store}}"
+								}
+							]
+						},
+						"description": "Call a given Shopify Storefront MCP tool with the provided args.\n\nThe request body will be validated against the given tool schema to ensure required args are provided"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoint for introspection of and direct calls to Shopify Storefront MCP Tools"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "store",
+			"value": ""
+		},
+		{
+			"key": "store_name",
+			"value": ""
+		},
+		{
+			"key": "conversation_id",
+			"value": ""
+		}
+	]
+}
